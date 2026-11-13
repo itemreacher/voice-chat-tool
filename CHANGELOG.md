@@ -4,6 +4,16 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com), ver
 [Semantic Versioning](https://semver.org). A release is created from a tag `vX.Y.Z` (see `docs/RELEASING.md`);
 the version in `vct/__init__.py` must match the tag.
 
+## [1.0.1] - 2026-11-13
+
+### Fixed
+- The program did not start when the microphone had been chosen by name in the settings and Windows
+  listed that microphone under several audio interfaces ("Multiple input devices found"). A name is now
+  resolved to exactly one device, and a microphone that cannot be opened falls back to the default one.
+- Umlauts in the config that had been damaged by a wrong encoding (`Ã¼bersetze`) are repaired when it is loaded.
+- Release workflow: the Linux package no longer drags in CUDA libraries (3 GB), and publishing no longer
+  trips over the unpacked folder.
+
 ## [1.0.0] - 2026-11-13
 
 ### Added

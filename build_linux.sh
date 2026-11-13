@@ -20,4 +20,5 @@ cp -r dist/VoiceChatTool "$OUT/VoiceChatTool"
 cp packaging/linux/install.sh packaging/linux/uninstall.sh "$OUT/"
 chmod +x "$OUT/install.sh" "$OUT/uninstall.sh" "$OUT/VoiceChatTool/VoiceChatTool"
 tar -C installer/Output -czf "$OUT.tar.gz" "VoiceChatTool-$VER-linux"
+rm -rf "$OUT"   # keep only the .tar.gz in installer/Output (it is what gets published)
 echo "Done: $OUT.tar.gz"

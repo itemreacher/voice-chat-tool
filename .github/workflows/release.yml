@@ -56,6 +56,9 @@ jobs:
         run: |
           python -m venv .venv
           if [ "$RUNNER_OS" = "Windows" ]; then PY=.venv/Scripts/python; else PY=.venv/bin/python; fi
+          # Argos Translate pulls in PyTorch. On Linux pip would take the CUDA build (about 2.5 GB of
+          # libraries we never use, and over GitHub's 2 GiB file limit), so install the CPU build first.
+          if [ "$RUNNER_OS" = "Linux" ]; then $PY -m pip install torch --index-url https://download.pytorch.org/whl/cpu; fi
           $PY -m pip install -r requirements-dev.txt
           # the GPU edition needs the CUDA libraries inside the build environment
           if [ "$RUNNER_OS" = "Windows" ]; then $PY -m pip install -r requirements-gpu.txt; fi
@@ -96,7 +99,12 @@ jobs:
         run: |
           cd staging
           ls -la
-          sha256sum * > SHA256SUMS.txt
+          # only the installer files (a build may leave folders behind)
+          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%f\n' | sort > files.txt
+          if find . -maxdepth 1 -type f -size +2000M | grep -q .; then
+            echo "A file is larger than GitHub's 2 GiB limit per release file:"; find . -maxdepth 1 -type f -size +2000M; exit 1
+          fi
+          xargs -a files.txt sha256sum > SHA256SUMS.txt
           cat SHA256SUMS.txt
-          gh release create "$GITHUB_REF_NAME" * --repo "$GITHUB_REPOSITORY" \
+          gh release create "$GITHUB_REF_NAME" $(cat files.txt) SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" \
             --title "Voice Chat Tool ${GITHUB_REF_NAME#v}" --generate-notes
