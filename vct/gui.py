@@ -219,7 +219,9 @@ class App:
         import subprocess
 
         try:
-            subprocess.Popen(updater.installer_command(path), close_fds=True,
+            from .app import app_dir
+
+            subprocess.Popen(updater.installer_command(path, app_dir()), close_fds=True,
                              creationflags=getattr(subprocess, "DETACHED_PROCESS", 0))
         except OSError as exc:
             self.update_btn.configure(state="normal")

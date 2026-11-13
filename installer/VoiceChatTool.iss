@@ -32,7 +32,9 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 ; Per-user install by default (no admin needed); the user may choose "for all users".
 PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
+; 'commandline' (not 'dialog'): a dialog asking 'for me / for all users' would also appear in a
+; silent update and block it forever. Per-user is the default, /ALLUSERS selects all users.
+PrivilegesRequiredOverridesAllowed=commandline
 CloseApplications=yes
 RestartApplications=no
 WizardStyle=modern

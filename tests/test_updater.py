@@ -134,9 +134,25 @@ def test_foreign_download_url_is_refused(tmp_path):
         U.download_and_verify(rel, other_repo, REPO, tmp_path, lambda d, t: None, lambda u: "", fake_download(PAYLOAD))
 
 
-def test_installer_command_flags():
+ENV = {"ProgramFiles": r"C:\Program Files", "ProgramFiles(x86)": r"C:\Program Files (x86)"}
+
+
+def test_installer_command_flags_and_per_user_default():
     cmd = U.installer_command(Path("C:/t/Setup.exe"))
-    assert cmd[1:] == ["/SILENT", "/NORESTART", "/CLOSEAPPLICATIONS", "/RELAUNCH=1"]
+    assert cmd[1:] == ["/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS",
+                       "/RELAUNCH=1", "/CURRENTUSER"]
+
+
+def test_install_mode_is_always_stated_so_no_dialog_can_block_the_update():
+    per_user = Path(r"C:\Users\x\AppData\Local\Programs\Voice Chat Tool")
+    assert U.installer_command(Path("S.exe"), per_user, ENV)[-1] == "/CURRENTUSER"
+    machine = Path(r"C:\Program Files\Voice Chat Tool")
+    assert U.installer_command(Path("S.exe"), machine, ENV)[-1] == "/ALLUSERS"
+    assert U.installer_command(Path("S.exe"), Path(r"C:\Program Files (x86)\VCT"), ENV)[-1] == "/ALLUSERS"
+
+
+def test_program_files_lookalike_folder_is_not_machine_wide():
+    assert not U.is_machine_wide_install(Path(r"C:\Program Files Extra\VCT"), ENV)
 
 
 def test_no_release_yet_is_not_an_error():

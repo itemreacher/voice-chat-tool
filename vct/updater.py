@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import re
 import urllib.error
 import urllib.request
@@ -23,7 +24,7 @@ USER_AGENT = "VoiceChatTool-updater"
 API = "https://api.github.com/repos/{repo}/releases/latest"
 CHECKSUM_ASSET = "SHA256SUMS.txt"
 INSTALLER_PATTERN = re.compile(r"^VoiceChatTool-Setup-(?P<ver>[\w.]+)-(?P<edition>CPU|GPU)\.exe$", re.I)
-INSTALLER_ARGS = ["/SILENT", "/NORESTART", "/CLOSEAPPLICATIONS", "/RELAUNCH=1"]
+INSTALLER_ARGS = ["/SILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/CLOSEAPPLICATIONS", "/RELAUNCH=1"]
 CHUNK = 1 << 20
 _REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 
@@ -220,5 +221,17 @@ def download_and_verify(release: Release, asset: Asset, repo: str, dest_dir: Pat
     return dest
 
 
-def installer_command(installer: Path) -> List[str]:
-    return [str(installer), *INSTALLER_ARGS]
+def is_machine_wide_install(app_dir: Path, env: Optional[Dict[str, str]] = None) -> bool:
+    """True if the program lives under Program Files (installed 'for all users')."""
+    env = env if env is not None else dict(os.environ)
+    roots = [env.get(k, "") for k in ("ProgramFiles", "ProgramFiles(x86)", "ProgramW6432")]
+    here = str(app_dir).lower().replace("/", "\\")
+    return any(r and here.startswith(r.lower().rstrip("\\") + "\\") for r in roots)
+
+
+def installer_command(installer: Path, app_dir: Optional[Path] = None,
+                      env: Optional[Dict[str, str]] = None) -> List[str]:
+    """Silent update command. The install mode is always stated, so no dialog can block it:
+    per user normally, for all users (Windows asks for permission) if the program is in Program Files."""
+    mode = "/ALLUSERS" if app_dir is not None and is_machine_wide_install(app_dir, env) else "/CURRENTUSER"
+    return [str(installer), *INSTALLER_ARGS, mode]

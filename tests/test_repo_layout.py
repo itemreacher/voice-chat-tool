@@ -39,3 +39,6 @@ def test_release_workflow_keeps_the_pieces_the_updater_needs():
 def test_installer_script_supports_silent_update_relaunch():
     iss = (ROOT / "installer/VoiceChatTool.iss").read_text(encoding="utf-8")
     assert "RelaunchRequested" in iss and "{param:RELAUNCH" in iss and "AppId=" in iss
+    # a mode dialog would block a silent update, so it must not be offered
+    assert "PrivilegesRequiredOverridesAllowed=commandline" in iss
+    assert "PrivilegesRequiredOverridesAllowed=dialog" not in iss

@@ -100,7 +100,7 @@ jobs:
           cd staging
           ls -la
           # only the installer files (a build may leave folders behind)
-          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt -printf '%f\n' | sort > files.txt
+          find . -maxdepth 1 -type f ! -name SHA256SUMS.txt ! -name files.txt -printf '%f\n' | sort > files.txt
           if find . -maxdepth 1 -type f -size +2000M | grep -q .; then
             echo "A file is larger than GitHub's 2 GiB limit per release file:"; find . -maxdepth 1 -type f -size +2000M; exit 1
           fi
