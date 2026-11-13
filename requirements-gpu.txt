@@ -1,0 +1,4 @@
+# Optional: NVIDIA CUDA 12 runtime libraries so Whisper can run on the GPU.
+# Only needed for the GPU switch. Proprietary NVIDIA license (free to use).
+nvidia-cublas-cu12
+nvidia-cudnn-cu12

@@ -1,0 +1,6 @@
+faster-whisper>=1.0.3
+argostranslate>=1.9.6
+sounddevice>=0.4.6
+numpy>=1.26
+keyboard>=0.13.5
+pyspellchecker>=0.8

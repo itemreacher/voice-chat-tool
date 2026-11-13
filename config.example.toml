@@ -1,0 +1,50 @@
+# voice-chat-tool configuration (UTF-8). The GUI rewrites this file when you save.
+
+# Push-to-talk key: hold to record, release to process. A single key only.
+hotkey = "f9"
+# Hold this key instead and speak: the text is ALWAYS translated into target_language,
+# no keyword needed. A soft tone confirms it. "" disables it.
+translate_hotkey = "f8"
+
+# Language you speak (Whisper language code) and language of the output text.
+# Any pair works once the language packs are installed (tab "Sprachen & Modelle").
+source_language = "de"
+target_language = "en"
+
+# "keyword" = translate only if you start with a keyword below
+# "always"  = translate everything
+# "off"     = output exactly what you said
+translate_mode = "keyword"
+keywords = ["translate", "übersetze"]
+
+# Words Whisper should get right (names, game terms), e.g. ["Valorant", "Jett", "Spike"].
+vocabulary = []
+# Fixed replacements after recognition, one "wrong = right" per entry,
+# e.g. ["wiedora = Valorant"]. Whole words, case-insensitive.
+replacements = []
+# Fix unknown words that have one clear dictionary match (source language, before translation).
+spellcheck = true
+
+# faster-whisper model: tiny, base, small, medium, large-v3 ...
+whisper_model = "small"
+# Optional bigger model used only on the GPU. "" = same as whisper_model.
+whisper_model_gpu = ""
+
+# Where Whisper runs at start-up: "auto", "cpu" or "gpu". F10-style key switches live.
+device = "auto"
+device_toggle_hotkey = "f10"
+
+# "" = Windows default microphone, a device index (e.g. 2) or part of a device name.
+microphone_device = ""
+
+# "type" = type into the focused window AND copy; "clipboard" = copy only (safest with anti-cheat).
+output_mode = "type"
+
+# Soft tones (no sound for normal push-to-talk): a short rising tone when translation is
+# active, a tone when switching CPU/GPU. false = completely silent.
+beep = true
+
+# Updates: look for a newer release on GitHub when the program starts (a plain HTTPS request,
+# nothing about you is sent). update_repo "" = the repository this program was built from.
+update_check = true
+update_repo = ""

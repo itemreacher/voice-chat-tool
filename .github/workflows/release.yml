@@ -1,0 +1,102 @@
+# Builds the installers for Windows (CPU + GPU), macOS and Linux and publishes a GitHub Release.
+# Start it by pushing a tag:   git tag v1.0.1 && git push origin v1.0.1
+# The tag must equal the version in vct/__init__.py. The installed program's updater reads this
+# release (and SHA256SUMS.txt) to update itself.
+#
+# NOTE: the Windows build was tested by hand on a Windows 11 PC; the whole workflow, and the
+# macOS and Linux jobs in particular, have not been run yet. Expect to fix small things on the first run.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: windows-latest, name: windows }
+          - { os: macos-latest,   name: macos }
+          - { os: ubuntu-latest,  name: linux }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Version must match the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          version=$(python tools/version.py)
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match vct/__init__.py version $version"; exit 1
+          fi
+
+      - name: Tell the program which repository publishes its updates
+        run: python tools/set_repo.py ${{ github.repository }}
+
+      - name: Linux libraries
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libportaudio2 python3-tk
+
+      - name: Inno Setup (Windows)
+        if: runner.os == 'Windows'
+        run: choco install innosetup -y --no-progress
+
+      - name: Create the build environment and run the tests
+        shell: bash
+        run: |
+          python -m venv .venv
+          if [ "$RUNNER_OS" = "Windows" ]; then PY=.venv/Scripts/python; else PY=.venv/bin/python; fi
+          $PY -m pip install -r requirements-dev.txt
+          # the GPU edition needs the CUDA libraries inside the build environment
+          if [ "$RUNNER_OS" = "Windows" ]; then $PY -m pip install -r requirements-gpu.txt; fi
+          $PY -m pytest -q
+
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        env: { NOPAUSE: "1" }
+        run: cmd /c build_installer.bat
+      - name: Build (macOS)
+        if: runner.os == 'macOS'
+        run: bash build_macos.sh
+      - name: Build (Linux)
+        if: runner.os == 'Linux'
+        run: bash build_linux.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installer-${{ matrix.name }}
+          path: installer/Output/*
+          if-no-files-found: error
+
+  publish:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: staging
+          pattern: installer-*
+          merge-multiple: true
+      - name: Checksums and release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd staging
+          ls -la
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          gh release create "$GITHUB_REF_NAME" * --repo "$GITHUB_REPOSITORY" \
+            --title "Voice Chat Tool ${GITHUB_REF_NAME#v}" --generate-notes

@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+
+# Build output (created by build.bat / build_installer.bat / build_*.sh)
+build/
+dist/
+dist_new/
+*.spec
+installer/Output/
+build_config.keep
+
+# Local files of a person running the program from this folder
+config.toml
+*.log
+selftest.log
+*.lnk
+
+# Editors / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
