@@ -4,6 +4,14 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com), ver
 [Semantic Versioning](https://semver.org). A release is created from a tag `vX.Y.Z` (see `docs/RELEASING.md`);
 the version in `vct/__init__.py` must match the tag.
 
+## [1.0.2] - 2026-11-13
+
+### Fixed
+- A silent update started by the program itself could hang forever on the Setup dialog "Select install mode".
+  Setup no longer offers that dialog (per user is the default, `/ALLUSERS` selects all users), and the
+  updater states the install mode explicitly.
+- Release workflow: the helper list `files.txt` is no longer published as a release file.
+
 ## [1.0.1] - 2026-11-13
 
 ### Fixed
