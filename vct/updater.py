@@ -13,6 +13,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -29,6 +30,10 @@ _REPO = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
 
 class UpdateError(Exception):
     pass
+
+
+class NoReleaseError(UpdateError):
+    """The repository has no published release yet (GitHub answers 404)."""
 
 
 @dataclass(frozen=True)
@@ -104,7 +109,8 @@ def can_self_update(frozen: bool, platform: str, app_dir: Path) -> bool:
 
 
 def trusted_download_url(url: str, repo: str) -> bool:
-    return url.startswith(f"https://github.com/{repo}/releases/download/")
+    """A release download of this repository. GitHub treats owner/name case-insensitively."""
+    return url.lower().startswith(f"https://github.com/{repo}/releases/download/".lower())
 
 
 def parse_checksums(text: str) -> Dict[str, str]:
@@ -140,6 +146,10 @@ def fetch_json(url: str, timeout: float = 10.0) -> Dict:
     try:
         with urllib.request.urlopen(request, timeout=timeout) as resp:
             return json.loads(resp.read().decode("utf-8"))
+    except urllib.error.HTTPError as exc:
+        if exc.code == 404:
+            raise NoReleaseError("no release published yet") from exc
+        raise UpdateError(f"could not reach GitHub: {exc}") from exc
     except Exception as exc:
         raise UpdateError(f"could not reach GitHub: {exc}") from exc
 
@@ -158,7 +168,11 @@ def check_for_update(repo: str, current: str,
     """The newest release if it is newer than `current`, else None."""
     if not is_valid_repo(repo):
         raise UpdateError(f"update_repo must look like 'owner/name', got {repo!r}")
-    release = parse_release(fetch(API.format(repo=repo)))
+    try:
+        data = fetch(API.format(repo=repo))
+    except NoReleaseError:
+        return None  # nothing published yet: nothing newer than what is installed
+    release = parse_release(data)
     return release if is_newer(release.version, current) else None
 
 

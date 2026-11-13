@@ -137,3 +137,22 @@ def test_foreign_download_url_is_refused(tmp_path):
 def test_installer_command_flags():
     cmd = U.installer_command(Path("C:/t/Setup.exe"))
     assert cmd[1:] == ["/SILENT", "/NORESTART", "/CLOSEAPPLICATIONS", "/RELAUNCH=1"]
+
+
+def test_no_release_yet_is_not_an_error():
+    def fake(url):
+        raise U.NoReleaseError("none")
+    assert U.check_for_update(REPO, "1.0.0", fake) is None
+
+
+def test_other_network_errors_still_raise():
+    def fake(url):
+        raise U.UpdateError("offline")
+    with pytest.raises(U.UpdateError):
+        U.check_for_update(REPO, "1.0.0", fake)
+
+
+def test_download_url_check_ignores_owner_case_but_not_the_repository():
+    url = "https://github.com/SomeOne/Voice-Chat-Tool/releases/download/v1/a.exe"
+    assert U.trusted_download_url(url, "someone/voice-chat-tool")
+    assert not U.trusted_download_url(url, "someone/other-repo")
