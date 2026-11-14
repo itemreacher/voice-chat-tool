@@ -9,17 +9,18 @@ from pathlib import Path
 from tkinter import messagebox, ttk
 from typing import Any, Callable, Dict, List, Optional
 
+import os
 import sys
 import tempfile
 import webbrowser
 
-from . import __version__, build_info, theme, translator, updater
+from . import __version__, build_info, cuda_pack, theme, translator, updater
 from .audio_devices import unique_input_names
 from .config import ConfigError, DEVICES, parse_config, save_config
 from .engine import Engine
 from .languages import LANGUAGES, PIVOT, code_from_label, label
 from .logic import TRANSLATE_MODES
-from .paths import resource_dir
+from .paths import cuda_libs_dir, resource_dir
 
 WHISPER_MODELS = ["tiny", "base", "small", "medium", "large-v3"]
 STATE_TEXT = {"stopped": "GESTOPPT", "loading": "LÄDT …", "ready": "BEREIT",
@@ -50,7 +51,9 @@ class App:
     def __init__(self, root: tk.Tk, cfg: Dict[str, Any], config_path: Path, log_path: Path):
         self.root, self.cfg, self.config_path, self.log_path = root, cfg, config_path, log_path
         self.ui_queue: "queue.Queue[Callable[[], None]]" = queue.Queue()
-        self.engine = Engine(cfg, self.log, self._state_changed, self._got_result)
+        self.cuda_dir = cuda_libs_dir(sys.platform, os.environ, Path.home())
+        self._gpu_download_running = False
+        self.engine = Engine(cfg, self.log, self._state_changed, self._got_result, self.cuda_dir)
         self.installed: set = set()
         self.index_pairs: set = set()
         self._trim_log_file()
@@ -602,12 +605,61 @@ class App:
             return
         tr = self.engine.transcriber
         if self.engine.device == "cpu" and tr is not None and tr.gpu_libs_missing():
-            messagebox.showinfo(
-                "Keine GPU-Unterstützung",
-                "Diese Installation enthält die NVIDIA-CUDA-Bibliotheken nicht, deshalb läuft "
-                "die Erkennung nur auf der CPU.\n\nInstalliere die GPU-Edition "
-                "(VoiceChatTool-Setup-…-GPU.exe), um auf die Grafikkarte umzuschalten.")
+            self._offer_gpu_download()
             return
+        self.engine.toggle_device()
+
+    def _offer_gpu_download(self) -> None:
+        """This installation has no NVIDIA libraries: offer to download them, then switch."""
+        if sys.platform != "win32":
+            messagebox.showinfo("Keine GPU-Unterstützung",
+                                "Die NVIDIA-CUDA-Bibliotheken fehlen. Auf diesem System werden sie nicht "
+                                "automatisch geladen (siehe README).")
+            return
+        if self._gpu_download_running:
+            self.log("The NVIDIA libraries are already downloading.")
+            return
+        if not messagebox.askyesno(
+                "GPU-Unterstützung nachladen",
+                "Dieses Programm enthält die NVIDIA-CUDA-Bibliotheken nicht, deshalb läuft die "
+                "Erkennung auf der CPU.\n\n"
+                "Soll es sie jetzt nachladen? Sie kommen direkt von PyPI, wo NVIDIA sie veröffentlicht.\n"
+                "• Download ca. 1,3 GB (nur beim ersten Mal), danach ca. 1,9 GB Speicher in\n"
+                f"  {self.cuda_dir}\n"
+                "• Jede Datei wird per Prüfsumme kontrolliert.\n"
+                "• Es gilt die Lizenz von NVIDIA (liegt in den Paketen).\n\n"
+                "Danach schaltet das Programm automatisch auf die GPU um."):
+            return
+        self._gpu_download_running = True
+        step = {"pkg": "", "next": 10}
+
+        def progress(package: str, done: int, total: int) -> None:
+            if package != step["pkg"]:
+                step.update(pkg=package, next=10)
+            if total and done * 100 // total >= step["next"]:
+                self.log(f"Downloading {package}: {done * 100 // total} %")
+                step["next"] += 20
+
+        def work() -> None:
+            try:
+                cuda_pack.install(self.cuda_dir, Path(tempfile.gettempdir()) / "VoiceChatTool-cuda",
+                                  progress, self.log)
+            except cuda_pack.CudaPackError as exc:
+                self.log(f"GPU libraries could not be installed: {exc}")
+                self.ui_queue.put(lambda: messagebox.showerror("GPU-Bibliotheken", str(exc)))
+                return
+            finally:
+                self._gpu_download_running = False
+            self.ui_queue.put(self._after_gpu_download)
+
+        self.log("Downloading the NVIDIA CUDA libraries from PyPI...")
+        self.in_thread(work)
+
+    def _after_gpu_download(self) -> None:
+        tr = self.engine.transcriber
+        if tr is None:
+            return
+        tr.refresh_cuda_dirs()
         self.engine.toggle_device()
 
     def close(self) -> None:

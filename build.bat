@@ -32,6 +32,7 @@ if exist "%DISTDIR%\VoiceChatTool\config.toml" copy /y "%DISTDIR%\VoiceChatTool\
     --collect-all sounddevice --collect-all sentencepiece --collect-all spellchecker !NV_ARGS! main.py
 if errorlevel 1 goto :fail
 
+if defined NV_ARGS ".venv\Scripts\python.exe" tools\copy_licenses.py "%DISTDIR%\VoiceChatTool"
 if exist "build_config.keep" (
     copy /y "build_config.keep" "%DISTDIR%\VoiceChatTool\config.toml" >nul
     del "build_config.keep"

@@ -30,8 +30,10 @@ class Recording:
 class Engine:
     def __init__(self, cfg: Dict[str, Any], log: Log,
                  on_state: Optional[Callable[[str], None]] = None,
-                 on_result: Optional[Callable[[str, str], None]] = None):
+                 on_result: Optional[Callable[[str, str], None]] = None,
+                 cuda_dir: Optional[Path] = None):
         self.cfg = dict(cfg)
+        self.cuda_dir = cuda_dir
         self.log = log
         self._on_state = on_state or (lambda _s: None)
         self._on_result = on_result or (lambda _h, _r: None)
@@ -72,7 +74,7 @@ class Engine:
             return False
 
         self.transcriber = Transcriber(model_for_device(self.cfg, "cpu"),
-                                       model_for_device(self.cfg, "cuda"), self.log)
+                                       model_for_device(self.cfg, "cuda"), self.log, self.cuda_dir)
         try:
             self.transcriber.load(self.cfg["device"])
         except Exception as exc:

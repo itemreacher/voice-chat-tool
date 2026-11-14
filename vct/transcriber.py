@@ -15,16 +15,16 @@ LABELS = {"cpu": "CPU (int8)", "cuda": "GPU (CUDA float16)"}
 GPU_LOAD_TIMEOUT_S = 180  # first CUDA start can take ~30 s; beyond this something is stuck
 CUDA_LIBS = {"win32": ("cublas64_12.dll", "cudnn64_9.dll"),
              "linux": ("libcublas.so.12", "libcudnn.so.9")}
-NO_GPU_LIBS_MESSAGE = ("This installation has no GPU support (the NVIDIA CUDA libraries are missing). "
-                       "Use the GPU edition of the installer, or on a source install: "
-                       "pip install -r requirements-gpu.txt. Staying on the CPU.")
+NO_GPU_LIBS_MESSAGE = ("The NVIDIA CUDA libraries are missing, so the GPU cannot be used yet. In the program "
+                       "window click 'CPU/GPU wechseln': it offers to download them (about 1.3 GB). "
+                       "From source: pip install -r requirements-gpu.txt. Staying on the CPU.")
 GPU_HINT = ("GPU needs the NVIDIA CUDA 12 libraries. Installed program: use the GPU edition of the "
             "installer (VoiceChatTool-Setup-...-GPU.exe). From source: pip install -r requirements-gpu.txt")
 
 
-def cuda_dll_dirs() -> List[Path]:
-    """Folders like <site-packages>/nvidia/cublas/bin that hold the pip-installed CUDA DLLs."""
-    bases = [Path(p) for p in sys.path if p]
+def cuda_dll_dirs(extra_bases: Sequence[Path] = ()) -> List[Path]:
+    """Folders like <site-packages>/nvidia/cublas/bin that hold the CUDA DLLs (pip, bundled or downloaded)."""
+    bases = [Path(p) for p in sys.path if p] + [Path(b) for b in extra_bases]
     meipass = getattr(sys, "_MEIPASS", None)  # PyInstaller bundle
     if meipass:
         bases.append(Path(meipass))
@@ -36,9 +36,15 @@ def cuda_dll_dirs() -> List[Path]:
     return found
 
 
-def add_cuda_dll_dirs() -> None:
-    """Make pip-installed CUDA DLLs findable (CTranslate2 loads them lazily via PATH)."""
-    for d in cuda_dll_dirs():
+_ADDED_DLL_DIRS = set()
+
+
+def add_cuda_dll_dirs(extra_bases: Sequence[Path] = ()) -> None:
+    """Make CUDA DLLs findable (CTranslate2 loads them lazily via PATH)."""
+    for d in cuda_dll_dirs(extra_bases):
+        if str(d) in _ADDED_DLL_DIRS:
+            continue
+        _ADDED_DLL_DIRS.add(str(d))
         os.environ["PATH"] = str(d) + os.pathsep + os.environ.get("PATH", "")
         if hasattr(os, "add_dll_directory"):
             try:
@@ -68,13 +74,19 @@ def cuda_libs_loadable(platform: str = sys.platform, loader: Optional[Callable[[
 
 
 class Transcriber:
-    def __init__(self, cpu_model: str, gpu_model: str, log: Callable[[str], None]):
+    def __init__(self, cpu_model: str, gpu_model: str, log: Callable[[str], None],
+                 cuda_dir: Optional[Path] = None):
         self.models: Dict[str, str] = {"cpu": cpu_model, "cuda": gpu_model}
         self.log = log
+        self.cuda_dir = cuda_dir  # folder with downloaded NVIDIA libraries (may not exist yet)
         self.device = None  # "cpu" | "cuda" once a model is loaded
         self.model = None
         self._cuda_disabled = False  # set when a GPU start-up got stuck: do not try again
-        add_cuda_dll_dirs()
+        self.refresh_cuda_dirs()
+
+    def refresh_cuda_dirs(self) -> None:
+        """(Re-)register DLL folders, e.g. right after the NVIDIA libraries were downloaded."""
+        add_cuda_dll_dirs([self.cuda_dir] if self.cuda_dir else [])
 
     def cuda_available(self) -> bool:
         """A CUDA GPU exists, its libraries are loadable and it did not hang before."""

@@ -166,7 +166,12 @@ allows bigger models). Choose at start-up with `device` in `config.toml`
 (`device_toggle_hotkey`). A soft tone confirms: higher = GPU, lower = CPU. The switch
 runs in the background; recordings made meanwhile are processed afterwards.
 
-GPU needs the NVIDIA CUDA 12 libraries (one-time, about 1 GB):
+**Installed program:** the GPU edition of the installer already contains the NVIDIA libraries. The CPU edition
+does not, but its GPU button offers to download them (about 1.3 GB, from PyPI, checksum-verified) and then
+switches. They are stored in `%LOCALAPPDATA%\VoiceChatTool\cuda` together with NVIDIA's licence texts; delete
+that folder to remove them. An NVIDIA driver is required in any case.
+
+From source, GPU needs the NVIDIA CUDA 12 libraries (one-time, about 1 GB):
 
 ```powershell
 pip install -r requirements-gpu.txt

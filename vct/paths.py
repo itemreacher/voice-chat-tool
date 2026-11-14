@@ -26,6 +26,17 @@ def user_data_dir(platform: str, env: Mapping[str, str], home: Path) -> Path:
     return base / APP_NAME
 
 
+def cuda_libs_dir(platform: str, env: Mapping[str, str], home: Path) -> Path:
+    """Where downloaded NVIDIA libraries live. Machine-local (not roaming) because they are about 1.9 GB."""
+    override = env.get("VCT_DATA_DIR")
+    if override:
+        return Path(override) / "cuda"
+    if platform == "win32":
+        base = Path(env["LOCALAPPDATA"]) if env.get("LOCALAPPDATA") else home / "AppData" / "Local"
+        return base / APP_NAME / "cuda"
+    return user_data_dir(platform, env, home) / "cuda"
+
+
 def data_dir(app_dir: Path, frozen: bool, platform: str, env: Mapping[str, str],
              home: Path) -> Path:
     override: Optional[str] = env.get("VCT_DATA_DIR")

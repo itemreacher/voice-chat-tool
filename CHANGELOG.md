@@ -4,6 +4,14 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com), ver
 [Semantic Versioning](https://semver.org). A release is created from a tag `vX.Y.Z` (see `docs/RELEASING.md`);
 the version in `vct/__init__.py` must match the tag.
 
+## [1.0.3] - 2026-11-14
+
+### Added
+- The CPU edition can now use the GPU: the GPU button offers to download the NVIDIA CUDA libraries
+  (about 1.3 GB) from PyPI, checks every file against PyPI's SHA-256, unpacks only the runtime DLLs into
+  `%LOCALAPPDATA%\VoiceChatTool\cuda` together with NVIDIA's licence texts, and then switches to the GPU.
+  The GPU installer (which bundles the libraries) now also ships NVIDIA's licence texts.
+
 ## [1.0.2] - 2026-11-13
 
 ### Fixed

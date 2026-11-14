@@ -83,14 +83,14 @@ def test_toggle_without_libs_explains_and_never_builds_cuda():
     started = time.time()
     assert t.toggle() == "cpu"
     assert time.time() - started < 2
-    assert any("no GPU support" in line for line in logs)
+    assert any("CUDA libraries are missing" in line for line in logs)
 
 
 def test_startup_gpu_preference_without_libs_falls_back_quickly():
     t, logs = fake("hang", libs_ok=False)
     t.load("gpu")
     assert t.device == "cpu"
-    assert any("no GPU support" in line for line in logs)
+    assert any("CUDA libraries are missing" in line for line in logs)
 
 
 def test_toggle_works_when_gpu_is_fine():

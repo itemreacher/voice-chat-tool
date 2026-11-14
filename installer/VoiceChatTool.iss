@@ -52,7 +52,7 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 #ifdef GPU
 Source: "{#DistDir}\VoiceChatTool\*"; DestDir: "{app}"; Excludes: "config.toml"; Flags: recursesubdirs ignoreversion
 #else
-Source: "{#DistDir}\VoiceChatTool\*"; DestDir: "{app}"; Excludes: "config.toml,_internal\nvidia\*"; Flags: recursesubdirs ignoreversion
+Source: "{#DistDir}\VoiceChatTool\*"; DestDir: "{app}"; Excludes: "config.toml,_internal\nvidia\*,licenses\nvidia\*"; Flags: recursesubdirs ignoreversion
 #endif
 
 [Icons]

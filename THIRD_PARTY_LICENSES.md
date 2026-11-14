@@ -15,7 +15,7 @@ NVIDIA libraries and the downloaded models.
 | [pyspellchecker](https://github.com/barrust/pyspellchecker) | spelling correction | MIT |
 | [NumPy](https://numpy.org) | audio arrays | BSD-3-Clause |
 | Tkinter / Python | window, runtime | PSF licence |
-| **nvidia-cublas-cu12, nvidia-cudnn-cu12** (GPU installer only) | GPU speed-up | NVIDIA proprietary licence: free to use, redistribution is allowed under NVIDIA's terms; read them before you publish the GPU installer |
+| **nvidia-cublas-cu12, nvidia-cuda-nvrtc-cu12, nvidia-cudnn-cu12** (GPU installer; or downloaded from PyPI by the program on request) | GPU speed-up | NVIDIA proprietary licences (texts are shipped in `licenses/nvidia/` of the GPU edition and next to the downloaded libraries). The cuBLAS and cuDNN licences allow distributing the runtime libraries as part of an application under conditions (the application must offer substantial functionality of its own, only the application may use the libraries, and the terms must be consistent with NVIDIA's); for cuBLAS only the parts listed in its "Attachment A" may be distributed, which has **not** been checked file by file. The CPU edition does not contain them: the program downloads them from PyPI only if you ask it to. Read the licences before you redistribute the GPU installer. |
 | [PyInstaller](https://pyinstaller.org) (build time) | packaging | GPL-2.0 with an exception that allows distributing the built programs |
 | [Inno Setup](https://jrsoftware.org/isinfo.php) (build time) | Windows installer | Inno Setup licence (free, also for commercial use) |
 | [Pillow](https://python-pillow.org) (build time) | logo generation | MIT-CMU (HPND) |
