@@ -4,6 +4,16 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com), ver
 [Semantic Versioning](https://semver.org). A release is created from a tag `vX.Y.Z` (see `docs/RELEASING.md`);
 the version in `vct/__init__.py` must match the tag.
 
+## [1.0.5] - 2026-11-14
+
+### Fixed
+- Recording failed with `DirectSound error -2005401480` ("no driver") when the chosen microphone was
+  opened through an audio interface that cannot use it at that moment. A named microphone is now tried on
+  the interface Windows uses by default first (also recognising Windows' shortened 31-character names) and,
+  if that fails, on its other interfaces. The error message lists what was tried and what usually causes it
+  (another program holding the microphone exclusively).
+- The microphone drop-down no longer lists the shortened duplicate of a name.
+
 ## [1.0.4] - 2026-11-14
 
 ### Fixed
