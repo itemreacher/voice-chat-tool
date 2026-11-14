@@ -4,6 +4,12 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com), ver
 [Semantic Versioning](https://semver.org). A release is created from a tag `vX.Y.Z` (see `docs/RELEASING.md`);
 the version in `vct/__init__.py` must match the tag.
 
+## [1.0.4] - 2026-11-14
+
+### Fixed
+- Same as 1.0.3 (version 1.0.3 was never published): a unit test compared a Windows path in a way that only
+  works on Windows, which stopped the Linux and macOS builds of the release.
+
 ## [1.0.3] - 2026-11-14
 
 ### Added

@@ -144,12 +144,18 @@ def test_interrupted_reinstall_clears_the_old_marker(tmp_path):
     assert not C.is_installed(target)
 
 
+def _norm(path) -> str:
+    """Compare paths independently of the OS running the test (Windows paths on Linux/macOS)."""
+    return str(path).replace("\\", "/")
+
+
 def test_cuda_libs_dir_locations():
     home = Path("/h")
-    assert cuda_libs_dir("win32", {"LOCALAPPDATA": r"C:\Users\u\AppData\Local"}, home) == Path(r"C:\Users\u\AppData\Local\VoiceChatTool\cuda")
-    assert cuda_libs_dir("win32", {}, home) == home / "AppData/Local/VoiceChatTool/cuda"
-    assert cuda_libs_dir("win32", {"VCT_DATA_DIR": "/o"}, home) == Path("/o/cuda")
-    assert cuda_libs_dir("linux", {}, home) == home / ".config/VoiceChatTool/cuda"
+    assert _norm(cuda_libs_dir("win32", {"LOCALAPPDATA": r"C:\Users\u\AppData\Local"}, home)) == \
+        "C:/Users/u/AppData/Local/VoiceChatTool/cuda"
+    assert _norm(cuda_libs_dir("win32", {}, home)) == _norm(home / "AppData/Local/VoiceChatTool/cuda")
+    assert _norm(cuda_libs_dir("win32", {"VCT_DATA_DIR": "/o"}, home)) == "/o/cuda"
+    assert _norm(cuda_libs_dir("linux", {}, home)) == _norm(home / ".config/VoiceChatTool/cuda")
 
 
 def test_transcriber_looks_in_the_downloaded_folder(tmp_path):
