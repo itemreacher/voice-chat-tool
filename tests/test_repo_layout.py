@@ -42,3 +42,13 @@ def test_installer_script_supports_silent_update_relaunch():
     # a mode dialog would block a silent update, so it must not be offered
     assert "PrivilegesRequiredOverridesAllowed=commandline" in iss
     assert "PrivilegesRequiredOverridesAllowed=dialog" not in iss
+
+
+def test_weekly_routine_is_documented_and_keeps_ideas_local():
+    routine = (ROOT / "docs/WEEKLY_ROUTINE.md").read_text(encoding="utf-8")
+    for needle in ("untrusted", "never merges", "IDEAS.md", "tools/triage.py", ".github/"):
+        assert needle in routine
+    ignore = (ROOT / ".gitignore").read_text(encoding="utf-8").splitlines()
+    for pattern in ("IDEAS.md", "reports/", ".triage_state.json"):
+        assert pattern in ignore                     # the maintainer's private review files stay off GitHub
+    assert (ROOT / "tools/triage.py").is_file() and (ROOT / ".github/ISSUE_TEMPLATE/idea.md").is_file()

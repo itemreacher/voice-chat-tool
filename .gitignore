@@ -23,3 +23,8 @@ selftest.log
 .vscode/
 .DS_Store
 Thumbs.db
+
+# Weekly review (local only)
+IDEAS.md
+reports/
+.triage_state.json
