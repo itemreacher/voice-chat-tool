@@ -20,6 +20,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Tuple
 
+from .cleanup import clear_directory
+
 USER_AGENT = "VoiceChatTool-updater"
 API = "https://api.github.com/repos/{repo}/releases/latest"
 CHECKSUM_ASSET = "SHA256SUMS.txt"
@@ -211,6 +213,7 @@ def download_and_verify(release: Release, asset: Asset, repo: str, dest_dir: Pat
     if not expected:
         raise UpdateError("this release publishes no checksum, so it will not be installed "
                           "automatically; download it from the release page")
+    clear_directory(dest_dir)                       # Setups of earlier updates are obsolete
     dest_dir.mkdir(parents=True, exist_ok=True)
     dest = dest_dir / asset.name
     download_fn(asset.url, dest, progress, asset.size)

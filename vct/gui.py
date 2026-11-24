@@ -14,7 +14,7 @@ import sys
 import tempfile
 import webbrowser
 
-from . import __version__, build_info, cuda_pack, theme, translator, updater
+from . import __version__, build_info, cleanup, cuda_pack, theme, translator, updater
 from .audio_devices import unique_input_names
 from .config import ConfigError, DEVICES, parse_config, save_config
 from .engine import Engine
@@ -54,6 +54,7 @@ class App:
         self.ui_queue: "queue.Queue[Callable[[], None]]" = queue.Queue()
         self.cuda_dir = cuda_libs_dir(sys.platform, os.environ, Path.home())
         self._gpu_download_running = False
+        self._update_running = False
         self.engine = Engine(cfg, self.log, self._state_changed, self._got_result, self.cuda_dir)
         self.installed: set = set()
         self.index_pairs: set = set()
@@ -80,6 +81,7 @@ class App:
         self._poll()
         self.start_engine()
         self.refresh_installed()
+        root.after(20000, lambda: self.in_thread(self._clean_downloads))   # old Setups / wheels in the temp folder
         if cfg["update_check"]:
             root.after(4000, lambda: self.check_updates(manual=False))   # not while loading models
 
@@ -172,6 +174,11 @@ class App:
         self.update_text.set(f"Neue Version v{release.version} verfügbar (installiert: v{__version__})")
         self.update_banner.pack(fill="x", padx=14, pady=(0, 8), before=self.notebook)
 
+    def _clean_downloads(self) -> None:
+        if self._gpu_download_running or self._update_running:
+            return                                              # something is downloading right now
+        cleanup.clean_temp_downloads(log=self.log)
+
     def _open_release_page(self) -> None:
         if self.release and self.release.page_url.startswith("https://github.com/"):
             webbrowser.open(self.release.page_url)
@@ -191,6 +198,7 @@ class App:
             self._open_release_page()
             return
         self.update_btn.configure(state="disabled")
+        self._update_running = True
         repo = self._update_repo()
         step = {"next": 10}
 
@@ -202,8 +210,9 @@ class App:
         def work() -> None:
             try:
                 path = updater.download_and_verify(
-                    release, asset, repo, Path(tempfile.gettempdir()) / "VoiceChatTool-update", progress)
+                    release, asset, repo, Path(tempfile.gettempdir()) / cleanup.UPDATE_DIRNAME, progress)
             except updater.UpdateError as exc:
+                self._update_running = False
                 self.log(f"Update failed: {exc}")
                 self.ui_queue.put(lambda: (self.update_btn.configure(state="normal"),
                                            messagebox.showerror("Update fehlgeschlagen", str(exc))))
@@ -220,6 +229,8 @@ class App:
                                    "Das Programm wird jetzt geschlossen, aktualisiert und danach "
                                    "automatisch neu gestartet. Fortfahren?"):
             self.update_btn.configure(state="normal")
+            self._update_running = False
+            cleanup.remove_file(path)                           # declined: do not keep a 200 MB file around
             return
         import subprocess
 
@@ -230,6 +241,8 @@ class App:
                              creationflags=getattr(subprocess, "DETACHED_PROCESS", 0))
         except OSError as exc:
             self.update_btn.configure(state="normal")
+            self._update_running = False
+            cleanup.remove_file(path)
             messagebox.showerror("Update fehlgeschlagen", f"Installer konnte nicht gestartet werden: {exc}")
             return
         self.log("Installer started; closing the program.")
@@ -644,7 +657,7 @@ class App:
 
         def work() -> None:
             try:
-                cuda_pack.install(self.cuda_dir, Path(tempfile.gettempdir()) / "VoiceChatTool-cuda",
+                cuda_pack.install(self.cuda_dir, Path(tempfile.gettempdir()) / cleanup.CUDA_DIRNAME,
                                   progress, self.log)
             except cuda_pack.CudaPackError as exc:
                 self.log(f"GPU libraries could not be installed: {exc}")

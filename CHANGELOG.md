@@ -4,6 +4,20 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com), ver
 [Semantic Versioning](https://semver.org). A release is created from a tag `vX.Y.Z` (see `docs/RELEASING.md`);
 the version in `vct/__init__.py` must match the tag.
 
+## [1.1.1] - 2026-11-25
+
+### Fixed
+- **Old versions stayed on the PC after an update.** Three causes, all fixed:
+  - An update that switched between "for all users" (Program Files) and "only for this user" installed a second
+    copy and left the old one in place. Setup now removes the installation of the other mode (for an
+    all-users installation Windows asks for permission once).
+  - Setup only overwrote files and never deleted files a newer version no longer has, so stale libraries of earlier
+    versions piled up inside the program folder (for example old video libraries, about 60 MB). The program folder
+    (`_internal`, `licenses`) is now replaced as a whole. Settings and downloaded GPU libraries are not touched.
+  - The updater left every downloaded Setup (200 MB to 1.2 GB) in the temp folder. They are now removed after the
+    update, when an update is declined, before the next download and at program start.
+- Tests build Setup files with their own id, so a test installation can never touch a real installation.
+
 ## [1.1.0] - 2026-11-24
 
 ### Added

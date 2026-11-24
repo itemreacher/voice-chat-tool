@@ -5,6 +5,13 @@
 #ifndef DistDir
   #define DistDir "..\dist"
 #endif
+; Tests build installers with their own id (/DTestAppId="{{...}"), so a test installation can never touch the
+; registration of a real one. The real id must never change: it is how a newer Setup finds the old installation.
+#ifdef TestAppId
+  #define AppIdValue TestAppId
+#else
+  #define AppIdValue "{{6F0B8F4E-3D1A-4C57-9B7E-5A1C2E9D4F10}"
+#endif
 #define AppName "Voice Chat Tool"
 #define ExeName "VoiceChatTool.exe"
 #ifdef GPU
@@ -14,8 +21,8 @@
 #endif
 
 [Setup]
-; Never change AppId: it lets a newer Setup update an existing installation in place.
-AppId={{6F0B8F4E-3D1A-4C57-9B7E-5A1C2E9D4F10}
+; Never change the real AppId: it lets a newer Setup update an existing installation in place.
+AppId={#AppIdValue}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppPublisher=Voice Chat Tool
@@ -65,10 +72,72 @@ Filename: "{app}\{#ExeName}"; Description: "{#AppName} starten"; Flags: nowait p
 ; Silent update started by the program itself (/RELAUNCH=1): start the new version again.
 Filename: "{app}\{#ExeName}"; Flags: nowait; Check: RelaunchRequested
 
+[InstallDelete]
+; The program folder is replaced as a whole. Setup only overwrites files; it never removes files that a newer
+; version no longer has, which left stale libraries of older versions behind (old PyAV/CTranslate2 files ...).
+Type: filesandordirs; Name: "{app}\_internal"
+Type: filesandordirs; Name: "{app}\licenses"
+
 [Code]
 function RelaunchRequested: Boolean;
 begin
   Result := ExpandConstant('{param:RELAUNCH|0}') = '1';
+end;
+
+function UninstallKey: String;
+begin
+  Result := ExpandConstant('Software\Microsoft\Windows\CurrentVersion\Uninstall\{#emit SetupSetting("AppId")}_is1');
+end;
+
+{ Uninstaller of an installation of this program made in the OTHER mode (for all users <-> only for this user),
+  or '' if there is none. Without this, an update that switches the mode leaves the old version behind. }
+function OtherModeUninstaller: String;
+var
+  Value: String;
+begin
+  Result := '';
+  if IsAdminInstallMode then
+  begin
+    if RegQueryStringValue(HKCU, UninstallKey, 'UninstallString', Value) then
+      Result := RemoveQuotes(Value);
+  end
+  else
+  begin
+    if RegQueryStringValue(HKLM64, UninstallKey, 'UninstallString', Value) then
+      Result := RemoveQuotes(Value);
+  end;
+  if (Result <> '') and (not FileExists(Result)) then
+    Result := '';
+end;
+
+procedure RemoveOtherModeInstall;
+var
+  Uninstaller: String;
+  ResultCode: Integer;
+  Started: Boolean;
+begin
+  Uninstaller := OtherModeUninstaller;
+  if Uninstaller = '' then
+    Exit;
+  Log('Removing the existing installation of the other mode: ' + Uninstaller);
+  if IsAdminInstallMode then
+    Started := Exec(Uninstaller, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE, ewWaitUntilTerminated, ResultCode)
+  else
+    { an installation for all users can only be removed with administrator rights: Windows asks for permission }
+    Started := ShellExec('runas', Uninstaller, '/VERYSILENT /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  if (not Started) or (ResultCode <> 0) then
+  begin
+    Log('The other installation could not be removed (started=' + IntToStr(Ord(Started)) + ', code=' + IntToStr(ResultCode) + ').');
+    if not WizardSilent then
+      MsgBox('Eine ältere Installation von Voice Chat Tool konnte nicht entfernt werden. Entferne sie bitte selbst ' +
+             'unter Windows-Einstellungen > Apps, damit nicht zwei Versionen auf dem PC liegen.', mbInformation, MB_OK);
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssInstall then
+    RemoveOtherModeInstall;
 end;
 
 [UninstallDelete]

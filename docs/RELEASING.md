@@ -33,6 +33,14 @@
   installer replaces the program in place and starts it again. Settings in the data folder are kept.
 - Only an installed Windows program updates itself. Source/portable runs and macOS/Linux open the release page.
 
+## What Setup does to the old version
+
+- The program folder `_internal` and `licenses` is deleted before the new files are copied (`[InstallDelete]`), because
+  Setup never removes files that a newer version no longer contains. Settings (`%APPDATA%\VoiceChatTool`) and downloaded
+  GPU libraries (`%LOCALAPPDATA%\VoiceChatTool\cuda`) live elsewhere and stay.
+- An installation of the other mode (all users <-> this user) is uninstalled first, so an update never leaves two copies.
+- Build test Setups with `/DTestAppId="{{...}"` so that test installs cannot overwrite the registration of a real one.
+
 ## Rules that keep updates working
 
 - Never change the `AppId` in `installer/VoiceChatTool.iss`: it lets a new Setup replace the old installation.
