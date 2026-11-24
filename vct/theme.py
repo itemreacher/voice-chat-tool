@@ -128,5 +128,7 @@ def apply(root) -> None:
                     relief="flat", padding=6)
     style.map("Treeview.Heading", background=[("active", PANEL_HI)])
 
+    style.configure("Horizontal.TProgressbar", background=GOLD, troughcolor=PANEL, bordercolor=BORDER,
+                    lightcolor=GOLD, darkcolor=GOLD)
     style.configure("Vertical.TScrollbar", background=PANEL_HI, troughcolor=PANEL,
                     bordercolor=PANEL, arrowcolor=GOLD)

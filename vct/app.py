@@ -63,6 +63,18 @@ def selftest() -> int:
     from . import translator
     from .correction import PySpellBackend
 
+    if sys.platform == "win32":                      # desktop audio (loopback) must work in the built program too
+        from .desktop_audio import CaptureError, LoopbackCapture
+
+        capture = LoopbackCapture()
+        try:
+            capture.start(lambda _audio: None)
+            log(f"Desktop audio OK: can record '{capture.name}'")
+        except CaptureError as exc:
+            log(f"Desktop audio NOT available here: {exc}")   # e.g. a PC without any output device
+        finally:
+            capture.stop()
+
     if not PySpellBackend.supported("de"):
         log("SELFTEST FAILED: spell-check dictionary missing")
         return 1

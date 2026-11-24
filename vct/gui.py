@@ -18,6 +18,7 @@ from . import __version__, build_info, cuda_pack, theme, translator, updater
 from .audio_devices import unique_input_names
 from .config import ConfigError, DEVICES, parse_config, save_config
 from .engine import Engine
+from .gui_desktop import DesktopTab
 from .languages import LANGUAGES, PIVOT, code_from_label, label
 from .logic import TRANSLATE_MODES
 from .paths import cuda_libs_dir, resource_dir
@@ -72,6 +73,7 @@ class App:
         self.notebook = notebook
         notebook.pack(fill="both", expand=True, padx=14, pady=(0, 14))
         self._build_main(notebook)
+        self.desktop = DesktopTab(self, notebook)
         self._build_languages(notebook)
         self._build_words(notebook)
         self._build_settings(notebook)
@@ -663,6 +665,7 @@ class App:
         self.engine.toggle_device()
 
     def close(self) -> None:
+        self.desktop.abort()
         self.engine.stop()
         self.root.destroy()
 

@@ -137,6 +137,21 @@ time a pair is used). Argos chains them, so **every combination works**, e.g. ru
 ru → en → de. Quality is best for the direct pairs with English. Not every language is in the
 Argos list; *Liste aktualisieren* shows what is available.
 
+## Desktop audio to text
+
+The tab **Desktop-Audio** turns what the PC plays into text while it plays, for example a video, a stream or a
+meeting. Start the recording, play the video, stop it; the text appears live, one line per phrase, with times.
+Language **automatic** detects it (or choose one); **Übersetzen nach** adds a translation below each line (offline,
+the language packs are fetched on first use). Copy it, or save it as `.txt` or as `.srt` subtitles that video
+players can load. A level meter shows that sound arrives.
+
+- Windows only (WASAPI loopback of the default output device). Everything the PC plays is recorded, including other
+  people's voices in a call: mind copyright and consent. The audio is not saved, only the text.
+- It uses the same Whisper model as push-to-talk (CPU or GPU). On a CPU a long video can be transcribed slower than it
+  plays; the tab then shows a backlog. A bigger model is more accurate but slower.
+- Music, noise and very quiet speech lower the quality. Whisper sometimes invents text on silence; very short
+  repeats are filtered and doubtful phrases are dropped.
+
 ## Fewer recognition errors (tab "Wörter")
 
 Applied in this order, every change is logged as `Fixed : 'before' -> 'after'` (the raw
@@ -201,6 +216,9 @@ GPU cannot be used, the tool says why and stays on the CPU. Set `whisper_model_g
 | `microphone_device` | `""` = default, a device index, or part of a device name |
 | `output_mode` | `"type"` (SendInput + clipboard) or `"clipboard"` (clipboard only) |
 | `translate_hotkey` | hold + speak = always translate, default `"f8"`, `""` disables |
+| `desktop_language` | desktop audio: `"auto"` or a language code |
+| `desktop_translate_to` | desktop audio: translate into this language, `""` = off |
+| `desktop_timestamps` | desktop audio: show times in front of each line |
 | `beep` | `true` / `false`: soft tones for translation and CPU/GPU switch only (push-to-talk is silent) |
 
 ## Tests (any OS, Python 3.11 recommended)

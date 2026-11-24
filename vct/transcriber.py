@@ -6,9 +6,10 @@ import os
 import sys
 import threading
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 from .config import next_device
+from .transcript import Spoken
 
 BEAM_SIZE = 1  # greedy decoding: lowest latency, fine for short chat phrases
 LABELS = {"cpu": "CPU (int8)", "cuda": "GPU (CUDA float16)"}
@@ -82,6 +83,7 @@ class Transcriber:
         self.device = None  # "cpu" | "cuda" once a model is loaded
         self.model = None
         self._cuda_disabled = False  # set when a GPU start-up got stuck: do not try again
+        self._infer_lock = threading.Lock()  # push-to-talk and desktop audio share one model
         self.refresh_cuda_dirs()
 
     def refresh_cuda_dirs(self) -> None:
@@ -205,12 +207,34 @@ class Transcriber:
         return " ".join(s.text.strip() for s in segments).strip()
 
     def transcribe(self, samples, language: str = "de", hotwords: Optional[str] = None) -> str:
-        try:
-            return self._run(samples, language, hotwords)
-        except Exception as exc:
-            if self.device != "cuda":
-                raise
-            self.log(f"GPU inference failed ({exc}); switching to CPU.")
-            if not self._activate("cpu"):
-                raise
-            return self._run(samples, language, hotwords)
+        with self._infer_lock:
+            try:
+                return self._run(samples, language, hotwords)
+            except Exception as exc:
+                if self.device != "cuda":
+                    raise
+                self.log(f"GPU inference failed ({exc}); switching to CPU.")
+                if not self._activate("cpu"):
+                    raise
+                return self._run(samples, language, hotwords)
+
+    def _run_segments(self, samples, language: Optional[str]) -> Tuple[List[Spoken], str]:
+        segments, info = self.model.transcribe(
+            samples, language=language, beam_size=BEAM_SIZE, vad_filter=True,
+            condition_on_previous_text=False)           # chunks are independent: no carried-over mistakes
+        out = [Spoken(s.start, s.end, s.text.strip(), s.no_speech_prob, s.avg_logprob)
+               for s in segments if s.text.strip()]
+        return out, str(info.language)
+
+    def transcribe_segments(self, samples, language: Optional[str] = None) -> Tuple[List[Spoken], str]:
+        """Phrases with times (seconds in `samples`) and the language. language=None detects it."""
+        with self._infer_lock:
+            try:
+                return self._run_segments(samples, language)
+            except Exception as exc:
+                if self.device != "cuda":
+                    raise
+                self.log(f"GPU inference failed ({exc}); switching to CPU.")
+                if not self._activate("cpu"):
+                    raise
+                return self._run_segments(samples, language)

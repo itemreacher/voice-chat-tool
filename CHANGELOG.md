@@ -4,6 +4,15 @@ All notable changes. Format: [Keep a Changelog](https://keepachangelog.com), ver
 [Semantic Versioning](https://semver.org). A release is created from a tag `vX.Y.Z` (see `docs/RELEASING.md`);
 the version in `vct/__init__.py` must match the tag.
 
+## [1.1.0] - 2026-11-24
+
+### Added
+- **Desktop audio to text:** the new tab "Desktop-Audio" records what the PC plays (a video, a stream, a call)
+  and writes it down live while it plays. The audio is cut at pauses, recognised with the same Whisper model
+  (language automatic or fixed), optionally translated, shown with a level meter, copied or saved as text
+  or as SRT subtitles. Windows only (WASAPI loopback). The audio itself is not stored.
+- New settings `desktop_language`, `desktop_translate_to`, `desktop_timestamps`.
+
 ## [1.0.5] - 2026-11-14
 
 ### Fixed

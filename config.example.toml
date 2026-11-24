@@ -44,6 +44,11 @@ output_mode = "type"
 # active, a tone when switching CPU/GPU. false = completely silent.
 beep = true
 
+# Desktop audio tab: transcribe what the PC plays. Language "auto" detects it; translate_to "" = no translation.
+desktop_language = "auto"
+desktop_translate_to = ""
+desktop_timestamps = true
+
 # Updates: look for a newer release on GitHub when the program starts (a plain HTTPS request,
 # nothing about you is sent). update_repo "" = the repository this program was built from.
 update_check = true

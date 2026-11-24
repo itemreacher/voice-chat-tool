@@ -29,7 +29,7 @@ if exist "%DISTDIR%\VoiceChatTool\config.toml" copy /y "%DISTDIR%\VoiceChatTool\
 ".venv\Scripts\python.exe" -m PyInstaller --noconfirm --clean --distpath "%DISTDIR%" --onedir --windowed --name VoiceChatTool ^
     --icon assets\icon.ico --add-data "assets\logo_64.png;assets" ^
     --collect-all faster_whisper --collect-all ctranslate2 --collect-all argostranslate ^
-    --collect-all sounddevice --collect-all sentencepiece --collect-all spellchecker !NV_ARGS! main.py
+    --collect-all sounddevice --collect-all sentencepiece --collect-all spellchecker --collect-all pyaudiowpatch !NV_ARGS! main.py
 if errorlevel 1 goto :fail
 
 if defined NV_ARGS ".venv\Scripts\python.exe" tools\copy_licenses.py "%DISTDIR%\VoiceChatTool"

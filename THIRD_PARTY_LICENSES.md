@@ -13,6 +13,7 @@ NVIDIA libraries and the downloaded models.
 | [sounddevice](https://github.com/spatialaudio/python-sounddevice) (+ PortAudio) | microphone | MIT |
 | [keyboard](https://github.com/boppreh/keyboard) | global hotkeys | MIT |
 | [pyspellchecker](https://github.com/barrust/pyspellchecker) | spelling correction | MIT |
+| [PyAudioWPatch](https://github.com/s0d3s/PyAudioWPatch) (Windows) (+ PortAudio) | recording the desktop audio (WASAPI loopback) | Apache-2.0 (PortAudio: MIT-style) |
 | [NumPy](https://numpy.org) | audio arrays | BSD-3-Clause |
 | Tkinter / Python | window, runtime | PSF licence |
 | **nvidia-cublas-cu12, nvidia-cuda-nvrtc-cu12, nvidia-cudnn-cu12** (GPU installer; or downloaded from PyPI by the program on request) | GPU speed-up | NVIDIA proprietary licences (texts are shipped in `licenses/nvidia/` of the GPU edition and next to the downloaded libraries). The cuBLAS and cuDNN licences allow distributing the runtime libraries as part of an application under conditions (the application must offer substantial functionality of its own, only the application may use the libraries, and the terms must be consistent with NVIDIA's); for cuBLAS only the parts listed in its "Attachment A" may be distributed, which has **not** been checked file by file. The CPU edition does not contain them: the program downloads them from PyPI only if you ask it to. Read the licences before you redistribute the GPU installer. |

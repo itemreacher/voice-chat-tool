@@ -4,3 +4,4 @@ sounddevice>=0.4.6
 numpy>=1.26
 keyboard>=0.13.5
 pyspellchecker>=0.8
+PyAudioWPatch>=0.2.12.9; sys_platform == "win32"
